@@ -98,7 +98,7 @@ while True:
             time.sleep(10)
 
     # Mostrar respuesta
-    print("\n=== RESPUESTA ===\n")
+    print("\n===RESPUESTA===\n")
     print(respuesta.content)
 
     # Guardar en historial
