@@ -1,5 +1,7 @@
 import os
 import time
+import sys
+
 from threading import Thread
 from openai import RateLimitError
 
@@ -15,7 +17,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 # =========================
 # Configuración de OpenRouter
 # =========================
-os.environ["OPENAI_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = "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"
 os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
 
 # =========================
@@ -40,7 +42,7 @@ historial = InMemoryChatMessageHistory()
 # Modelo en OpenRouter
 # =========================
 modelo = ChatOpenAI(
-    model="meta-llama/llama-3.1-405b-instruct:free",
+    model="meta-llama/llama-4-maverick:free",
     temperature=0.1
 )
 
@@ -55,6 +57,17 @@ db = None  # se inicializa luego
 # =========================
 PROCESADOS = set()
 
+def limpiar_historial_de_documento(documento: str):
+    """
+    Elimina del historial de chat todos los mensajes que mencionen un documento eliminado.
+    """
+    historial.messages = [
+        m for m in historial.messages
+        if documento not in m.content
+    ]
+    print(f"🧹 Historial limpiado de referencias a {documento}")
+
+
 # =========================
 # Función para revisar PDFs nuevos y eliminar eliminados
 # =========================
@@ -67,12 +80,13 @@ def revisar_pdfs():
         for filename in os.listdir(PDFS_DIR):
             if filename.endswith(".pdf") and filename not in PROCESADOS:
                 pdf_path = os.path.join(PDFS_DIR, filename)
-                print(f"📄 Procesando PDF nuevo: {filename}")
+                print(f"📄 Procesando PDF nuevo: {filename}", file=sys.stderr)
                 chunks = chunk_pdfs(pdf_path)
                 # Guardar solo chunks con contenido
                 chunks = [c for c in chunks if c.page_content.strip()]
                 nuevos_chunks.extend(chunks)
-                PROCESADOS.add(filename)
+                PROCESADOS.add(filename)                
+                print("Escribe tu pregunta (o 'salir' para terminar): ", end="", flush=True)
 
         # Sincronizar la base de datos
         db = save_to_chroma_db(nuevos_chunks, modelo_embeddings)

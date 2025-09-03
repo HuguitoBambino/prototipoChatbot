@@ -16,25 +16,27 @@ def save_to_chroma_db(chunks: list[Document], embedding_model) -> Chroma:
 
     # Obtener fuentes existentes en la BD
     existing_docs = db.get(include=["metadatas"])["metadatas"]
-    existing_sources = {doc["source"] for doc in existing_docs if doc.get("source")}
+    existing_sources = {doc["source"] for doc in existing_docs if doc.get("source")}       
 
     # Agregar chunks nuevos
     nuevos_chunks = [doc for doc in chunks if doc.metadata.get("source") not in existing_sources]
     if nuevos_chunks:
-        db.add_documents(nuevos_chunks)
+        ids = [f"{doc.metadata['source']}_{i}" for i, doc in enumerate(nuevos_chunks)]
+        db.add_documents(nuevos_chunks, ids=ids)
         print(f"✅ {len(nuevos_chunks)} nuevos documentos guardados en Chroma")
 
     # Eliminar documentos que ya no existen físicamente
     archivos_actuales = set(os.listdir("documents"))
     eliminar_sources = [src for src in existing_sources if src not in archivos_actuales]
     if eliminar_sources:
-        # Buscar IDs de chunks a eliminar
-        to_delete_ids = []
-        for doc_id, doc_meta in enumerate(existing_docs):
-            if doc_meta.get("source") in eliminar_sources:
-                to_delete_ids.append(doc_id)
-        if to_delete_ids:
-            db.delete(ids=to_delete_ids)
-            print(f"⚠ {len(to_delete_ids)} documentos eliminados de Chroma por no existir en la carpeta")
+        for src in eliminar_sources:
+            db.delete(where={"source": src})
+            try:
+                # limpiar historial de ese documento
+                from main import limpiar_historial_de_documento
+                limpiar_historial_de_documento(src)
+            except ImportError:
+                pass
+        print(f"⚠ Documentos eliminados de Chroma: {eliminar_sources}")
 
     return db
