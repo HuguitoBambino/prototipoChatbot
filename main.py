@@ -17,7 +17,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 # =========================
 # Configuración de OpenRouter
 # =========================
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = ""
 os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
 
 # =========================
@@ -42,7 +42,7 @@ historial = InMemoryChatMessageHistory()
 # Modelo en OpenRouter
 # =========================
 modelo = ChatOpenAI(
-    model="meta-llama/llama-4-maverick:free",
+    model="meta-llama/llama-3.1-405b-instruct:free",
     temperature=0.1
 )
 
